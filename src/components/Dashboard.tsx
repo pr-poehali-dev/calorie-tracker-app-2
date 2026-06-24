@@ -39,7 +39,7 @@ const mealIcon: Record<string, string> = {
   Перекус: 'Cookie',
 };
 
-const Ring = ({ value, max }: { value: number; max: number }) => {
+const Ring = ({ value, max, over }: { value: number; max: number; over: boolean }) => {
   const pct = Math.min(value / max, 1);
   const r = 80;
   const c = 2 * Math.PI * r;
@@ -51,16 +51,24 @@ const Ring = ({ value, max }: { value: number; max: number }) => {
         cy="100"
         r={r}
         fill="none"
-        stroke="hsl(var(--sage))"
+        stroke={over ? 'hsl(var(--destructive))' : 'hsl(var(--sage))'}
         strokeWidth="14"
         strokeLinecap="round"
         strokeDasharray={c}
         strokeDashoffset={c * (1 - pct)}
-        style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.22,1,0.36,1)' }}
+        style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.22,1,0.36,1), stroke 0.4s ease' }}
       />
     </svg>
   );
 };
+
+const EXERCISES = [
+  'присядь 20 раз',
+  'побегай 10 минут',
+  'попрыгай на скакалке 5 минут',
+  'пройди 2000 шагов быстрым шагом',
+  'сделай планку 3 подхода',
+];
 
 const Dashboard = ({ targets, onReset }: Props) => {
   const [entries, setEntries] = useState<Entry[]>(SAMPLE);
@@ -96,6 +104,8 @@ const Dashboard = ({ targets, onReset }: Props) => {
 
   const remove = (id: number) => setEntries((e) => e.filter((x) => x.id !== id));
 
+  const exercise = EXERCISES[Math.abs(left) % EXERCISES.length];
+
   const macros = [
     { l: 'Белки', v: protein, max: targets.protein, color: 'hsl(var(--clay))' },
     { l: 'Жиры', v: fat, max: targets.fat, color: 'hsl(var(--honey))' },
@@ -126,12 +136,18 @@ const Dashboard = ({ targets, onReset }: Props) => {
         <section className="bg-card rounded-3xl border border-border p-6 animate-rise">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="relative shrink-0">
-              <Ring value={consumed} max={targets.calories} />
+              <Ring value={consumed} max={targets.calories} over={left < 0} />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="font-display text-4xl font-semibold text-sage">
-                  {left > 0 ? left : 0}
+                <span
+                  className={`font-display text-4xl font-semibold ${
+                    left < 0 ? 'text-destructive' : 'text-sage'
+                  }`}
+                >
+                  {left < 0 ? `−${Math.abs(left)}` : left}
                 </span>
-                <span className="text-xs text-muted-foreground">ккал осталось</span>
+                <span className="text-xs text-muted-foreground">
+                  {left < 0 ? 'ккал сверх нормы' : 'ккал осталось'}
+                </span>
               </div>
             </div>
             <div className="flex-1 w-full space-y-3">
@@ -160,6 +176,25 @@ const Dashboard = ({ targets, onReset }: Props) => {
             </div>
           </div>
         </section>
+
+        {left < 0 && (
+          <section className="bg-destructive/10 border border-destructive/25 rounded-3xl p-5 animate-rise">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-destructive text-white flex items-center justify-center shrink-0">
+                <Icon name="TriangleAlert" size={20} />
+              </div>
+              <div>
+                <h4 className="font-medium text-destructive">
+                  −{Math.abs(left)} ккал · ты превышаешь дневную норму
+                </h4>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Ничего страшного! Чтобы вернуть баланс — {exercise}. Небольшая активность сожжёт
+                  лишнее и поднимет настроение.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="bg-card rounded-3xl border border-border p-5 animate-rise" style={{ animationDelay: '0.1s' }}>
           <div className="flex gap-2 mb-3 flex-wrap">
@@ -262,7 +297,9 @@ const Dashboard = ({ targets, onReset }: Props) => {
               <p className="text-sm text-muted-foreground mt-0.5">
                 {left > 0
                   ? `У тебя осталось ${left} ккал. Попробуй творог с орехами — добавит ${targets.protein - protein > 0 ? `${targets.protein - protein}г белка` : 'лёгкости'} до нормы.`
-                  : 'Норма на сегодня достигнута. Отличная работа — так держать!'}
+                  : left < 0
+                    ? `Сегодня перебор на ${Math.abs(left)} ккал. Совет: ${exercise}, а завтра начни день с лёгкого завтрака.`
+                    : 'Норма на сегодня достигнута. Отличная работа — так держать!'}
               </p>
               <Button variant="outline" size="sm" className="rounded-xl mt-3 border-sage/40 text-sage">
                 Спросить совет <Icon name="MessageCircle" size={14} className="ml-1" />
