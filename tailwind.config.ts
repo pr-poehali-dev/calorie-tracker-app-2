@@ -18,7 +18,15 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				display: ['Cormorant', 'serif'],
+				sans: ['Golos Text', 'sans-serif'],
+			},
 			colors: {
+				sage: 'hsl(var(--sage))',
+				clay: 'hsl(var(--clay))',
+				honey: 'hsl(var(--honey))',
+				berry: 'hsl(var(--berry))',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
